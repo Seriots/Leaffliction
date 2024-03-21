@@ -103,7 +103,7 @@ class ArgsHandler:
             if opt.check_function is not None:
                 input = opt.check_function(self, input)
         if len(input['args']) != len(self.all_args):
-            raise ValueError(f"Expected {len(self.all_args)}\
+            raise ValueError(f"Expected {len(self.all_args)} \
 arguments, got {len(input['args'])}.")
 
     def full_help(self) -> str:
