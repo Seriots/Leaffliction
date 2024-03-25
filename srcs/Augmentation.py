@@ -102,18 +102,17 @@ modifications on it',
                          default=False,
                          check_function=display_helper
                          ),
-            OptionObject('debug', 'Launch in debug mode',
-                         name='d',
-                         expected_type=bool,
-                         default=False
-                         ),
             OptionObject('transformation', 'The transformation to apply',
                          name='t',
                          expected_type=list,
                          default=None,
                          check_function=check_transformation
                          ),
-            OptionObject('save', 'Save all transformation',
+            OptionObject('save',
+                         """Save all transformation, all type are:
+                    normal, flip, rotate, skew,
+                    shear, crop, distortion, blur,
+                    brightness, contrast, projective""",
                          name='s',
                          expected_type=bool,
                          default=False
