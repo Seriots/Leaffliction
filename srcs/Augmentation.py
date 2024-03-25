@@ -6,10 +6,10 @@ from matplotlib import image
 from utils.ArgsHandler import ArgsHandler, ArgsObject, OptionObject
 from utils.ArgsHandler import display_helper
 
-from utils.image_modifier import image_flip, image_rotate, image_skew
-from utils.image_modifier import image_shear, image_crop, image_distortion
-from utils.image_modifier import image_blur, image_brightness
-from utils.image_modifier import image_contrast, image_projective
+from utils.data_augmentation import image_flip, image_rotate, image_skew
+from utils.data_augmentation import image_shear, image_crop, image_distortion
+from utils.data_augmentation import image_blur, image_brightness
+from utils.data_augmentation import image_contrast, image_projective
 
 
 def check_transformation(args_handler, u_ipt):
@@ -33,7 +33,7 @@ def check_transformation(args_handler, u_ipt):
 
 def get_transformation(original_img: np.ndarray, transfo_required: list):
     """Get the transformation required"""
-    transformation = {
+    augmentation = {
         'normal': None,
         'flip': image_flip,
         'rotate': image_rotate,
@@ -50,8 +50,8 @@ def get_transformation(original_img: np.ndarray, transfo_required: list):
     transformation_applied = {}
 
     for elem in transfo_required:
-        if elem in transformation:
-            function = transformation[elem]
+        if elem in augmentation:
+            function = augmentation[elem]
             if function is not None:
                 transformation_applied[elem] = function(original_img)
             else:
@@ -132,7 +132,11 @@ modifications on it',
 
     path = user_input['args'][0]
 
-    img = image.imread(path)
+    try:
+        img = image.imread(path)
+    except Exception as e:
+        print(f"Error while reading image: {e}")
+        return
     transformation = get_transformation(img, user_input['transformation'])
 
     if user_input['save']:
