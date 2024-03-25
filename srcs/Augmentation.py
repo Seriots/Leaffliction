@@ -14,16 +14,16 @@ from utils.data_augmentation import image_contrast, image_projective
 
 def check_transformation(args_handler, u_ipt):
     """Set the default features if the user didn't provide any."""
-    if 'transformation' not in u_ipt or u_ipt['transformation'] is None:
-        u_ipt['transformation'] = ['normal', 'flip', 'crop',
+    if 'augmentation' not in u_ipt or u_ipt['augmentation'] is None:
+        u_ipt['augmentation'] = ['normal', 'flip', 'crop',
                                    'blur', 'brightness',
                                    'contrast', 'rotate']
-    elif u_ipt['transformation'] == ['*']:
-        u_ipt['transformation'] = ['normal', 'flip', 'rotate', 'skew',
+    elif u_ipt['augmentation'] == ['*']:
+        u_ipt['augmentation'] = ['normal', 'flip', 'rotate', 'skew',
                                    'shear', 'crop', 'distortion', 'blur',
                                    'brightness', 'contrast', 'projective']
     else:
-        for elem in u_ipt['transformation']:
+        for elem in u_ipt['augmentation']:
             if elem not in ['normal', 'flip', 'rotate', 'skew',
                             'shear', 'crop', 'distortion', 'blur',
                             'brightness', 'contrast', 'projective']:
@@ -32,7 +32,7 @@ def check_transformation(args_handler, u_ipt):
 
 
 def get_transformation(original_img: np.ndarray, transfo_required: list):
-    """Get the transformation required"""
+    """Get the augmentation required"""
     augmentation = {
         'normal': None,
         'flip': image_flip,
@@ -60,7 +60,7 @@ def get_transformation(original_img: np.ndarray, transfo_required: list):
 
 
 def plot_transformation(dict_image: dict):
-    """Display the transformation"""
+    """Display the augmentation"""
     fig = plt.figure(figsize=(8, 6))
     fig.canvas.manager.set_window_title('Image Augmentation')
     fig.subplots_adjust(wspace=0.3, hspace=0.5)
@@ -75,7 +75,7 @@ def plot_transformation(dict_image: dict):
 
 
 def save_all_transformation(dict_image: dict, path: str):
-    """Save all the transformation"""
+    """Save all the augmentation"""
     for key, value in dict_image.items():
         if key == 'normal':
             continue
@@ -84,7 +84,7 @@ def save_all_transformation(dict_image: dict, path: str):
         try:
             image.imsave(f"{root}_{key}{ext}", value)
         except Exception as e:
-            print(f"Error while saving {key} transformation: {e}")
+            print(f"Error while saving {key} augmentation: {e}")
 
 
 def main():
@@ -102,14 +102,14 @@ modifications on it',
                          default=False,
                          check_function=display_helper
                          ),
-            OptionObject('transformation', 'The transformation to apply',
+            OptionObject('augmentation', 'The augmentation to apply',
                          name='t',
                          expected_type=list,
                          default=None,
                          check_function=check_transformation
                          ),
             OptionObject('save',
-                         """Save all transformation, all type are:
+                         """Save all augmentation, all type are:
                     normal, flip, rotate, skew,
                     shear, crop, distortion, blur,
                     brightness, contrast, projective""",
@@ -137,17 +137,17 @@ modifications on it',
     except Exception as e:
         print(f"Error while reading image: {e}")
         return
-    transformation = get_transformation(img, user_input['transformation'])
+    augmentation = get_transformation(img, user_input['augmentation'])
 
     if user_input['save']:
-        save_all_transformation(transformation, path)
+        save_all_transformation(augmentation, path)
 
-    plot_transformation(transformation)
+    plot_transformation(augmentation)
 
     try:
         plt.show()
     except KeyboardInterrupt:
-        print("Interrupt by user")
+        print("Interrupted by user")
 
 
 if __name__ == "__main__":
