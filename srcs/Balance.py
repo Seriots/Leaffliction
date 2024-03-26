@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 import os
 import random
 import matplotlib.image as mplimg
@@ -183,8 +185,12 @@ def main():
     allowed_transfo = user_input['transformation']
     mode = user_input['mode']
 
-    all_path = list_to_dict(get_max_size(path, depth))
-
+    try:
+        all_path = list_to_dict(get_max_size(path, depth))
+    except Exception as e:
+        print(e)
+        return
+    
     if mode == 'balance':
         if len(all_path.items()) == 0:
             print("Error in depth alignement")

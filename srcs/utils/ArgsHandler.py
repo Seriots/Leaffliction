@@ -107,7 +107,7 @@ class ArgsHandler:
         for opt in self.all_option:
             if opt.check_function is not None:
                 input = opt.check_function(self, input)
-        if len(input['args']) != len(self.all_args) and not self.OptionnalArgs():
+        if len(input['args']) != len(self.all_args) or not self.OptionnalArgs():
             raise ValueError(f"Expected {len(self.all_args)} \
 arguments, got {len(input['args'])}.")
 
