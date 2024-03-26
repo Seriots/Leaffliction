@@ -3,7 +3,7 @@
 import os
 import matplotlib.image as mplimg
 import tensorflow as tf
-# from tensorflow.keras import models
+from tensorflow.keras import models, layers
 
 from utils.ArgsHandler import ArgsHandler, ArgsObject, OptionObject
 from utils.ArgsHandler import display_helper
@@ -82,9 +82,29 @@ modifications on it',
     except Exception as e:
         print(e)
         return
-    print(len(all_image))
-    tf.keras.models.Sequential()
-    
+    print(len(all_image_dict))
+
+    model = models.Sequential()
+    size = all_image_dict['Apple_scab'][0].shape[0]
+    print(size)
+    model.add(layers.Conv2D(size, (3, 3), activation='relu', input_shape=(size, size, 3)))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(len(all_image_dict)))
+    model.summary()
+
+    nb_data_per_class = 100
+    x_train, y_train = [], []
+    for key, value in all_image_dict.items():
+        x_train += value[:nb_data_per_class]
+        y_train += [key] * nb_data_per_class
+
+    model
+    # model.fit()
 
     
 
