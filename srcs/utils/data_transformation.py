@@ -1,6 +1,4 @@
-import matplotlib.pyplot as plt
 import rembg
-import seaborn as sns
 
 from plantcv import plantcv as pcv
 
@@ -209,14 +207,12 @@ def imgt_color_histogram(img, mask):
     )
     roi_mask = pcv.roi.filter(mask=mask, roi=roi, roi_type='partial')
     pcv.analyze.color(img, roi_mask, colorspaces='all', label='default')
+    out = {}
     for key, value in all_frequencies.items():
         x = pcv.outputs.observations['default_1'][key]['label']
         y = pcv.outputs.observations['default_1'][key]['value']
         if value[0] is not None:
             x, y = value[0](x, y)
-
-        plt.plot(x, y, color=value[1])
-    plt.xlabel('Pixel Intensity')
-    plt.xticks(range(0, 256, 25))
-    plt.ylabel('Proportions of pixles (%)')
-    plt.legend(all_frequencies.keys())
+        out[key] = (x, y, value[1])
+    
+    return out, all_frequencies.keys()

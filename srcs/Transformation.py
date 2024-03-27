@@ -1,16 +1,147 @@
 #!/bin/env python3
 
-from plantcv import plantcv as pcv
 import matplotlib.image as mplimg
 import matplotlib.pyplot as plt
-import altair
-import seaborn as sns
-import cv2
+import os
 
 from utils.ArgsHandler import ArgsHandler, ArgsObject, OptionObject
 from utils.ArgsHandler import display_helper
 
-from utils.data_transformation import imgt_mask_disease, imgt_mask_background, imgt_gaussian_blur, imgt_leaf_mask, imgt_roi, imgt_analyse, imgt_x_pseudolandmarks, imgt_y_pseudolandmarks, imgt_color_histogram
+from utils.data_transformation import imgt_mask_disease, imgt_mask_background
+from utils.data_transformation import imgt_gaussian_blur, imgt_leaf_mask
+from utils.data_transformation import imgt_roi, imgt_y_pseudolandmarks
+from utils.data_transformation import imgt_x_pseudolandmarks, imgt_analyse
+from utils.data_transformation import imgt_color_histogram
+
+
+def check_transformation(args_handler, input_user):
+    """Modify the transformation input of the user"""
+    if 'transformation' not in input_user or input_user['transformation'] is None:
+        input_user['transformation'] = ['background', 'gaussian-blur', 'mask', 
+                                        'roi', 'analyse',
+                                        'pseudolandmarks-x', 'pseudolandmarks-y']
+    else:
+        for elem in input_user['transformation']:
+            if elem not in ['background', 'gaussian-blur', 'mask', 
+                            'roi', 'analyse',
+                            'pseudolandmarks-x', 'pseudolandmarks-y']:
+                raise ValueError(f"Transformation {elem} is not supported")
+    return input_user
+
+
+def manage_path_input(user_input):
+
+    destination = None
+    if len(user_input['args']) == 1:
+        path = user_input['args'][0]
+        if (os.path.isfile(path)):
+            path_type = 'file'
+        else:
+            raise ValueError(f"Path {path} is not a file")
+    elif 'source' in user_input and user_input['source'] and 'destination' in user_input and user_input['destination']:
+        path = user_input['source']
+        destination = user_input['destination']
+        if (os.path.isdir(path)) and (os.path.isdir(user_input['destination'])):
+            path_type = 'folder'
+        else:
+            raise ValueError(f"Path {path} is not a folder")
+    else:
+        print("No valid path given. If you provide a source please give a destination too.")
+    return path, path_type, destination
+
+
+def apply_transformation(path, transformation_list, color_histogram, dest=None, save=False):
+    """Apply all transformation to the image"""
+    try:
+        img = mplimg.imread(path)
+    except Exception as e:
+        print(e)
+        return
+
+    fig = plt.figure(figsize=(8, 4))
+    fig.canvas.manager.set_window_title('Image Transformation')
+    fig.subplots_adjust(wspace=0.3, hspace=0.3)
+
+    subplots_size = (len(transformation_list) + 1) // 4
+    fig.add_subplot(subplots_size, 4, 1)
+
+    plt.imshow(img)
+    plt.title('Original')
+    
+    background_mask = imgt_mask_background(img)
+    disease_mask =  imgt_mask_disease(img, background_mask)
+
+    for i, transformation in enumerate(transformation_list):
+        fig.add_subplot(subplots_size, 4, i + 2)
+        if transformation == 'background':
+            plt.imshow(background_mask, cmap='gray')
+            plt.title('Background mask')
+        elif transformation == 'gaussian-blur':
+            gaussian_img = imgt_gaussian_blur(disease_mask, ksize=(7, 7))
+            plt.imshow(gaussian_img, cmap='gray')
+            plt.title('Gaussian Blur')
+        elif transformation == 'mask':
+            mask_img = imgt_leaf_mask(img, disease_mask)
+            plt.imshow(mask_img, cmap='gray')
+            plt.title('disease mask')
+        elif transformation == 'roi':
+            roi_img = imgt_roi(img, disease_mask)
+            plt.imshow(roi_img)
+            plt.title('ROI')
+        elif transformation == 'analyse':
+            analyse_img = imgt_analyse(img, disease_mask)
+            plt.imshow(analyse_img)
+            plt.title('Analyse')
+        elif transformation == 'pseudolandmarks-x':
+            top, bottom, center_v = imgt_x_pseudolandmarks(img, disease_mask)
+            plt.imshow(img)
+            plt.scatter(x=[d[0][0] for d in bottom], y=[d[0][1] for d in bottom], color=(253 / 255, 1 / 255, 255 / 255))
+            plt.scatter(x=[d[0][0] for d in top], y=[d[0][1] for d in top], color=(2 / 255, 34 / 255, 255 / 255))
+            plt.scatter(x=[d[0][0] for d in center_v], y=[d[0][1] for d in center_v], color=(255 / 255, 79 / 255, 0 / 255))
+            plt.title('Pseudolandmarks X')
+        elif transformation == 'pseudolandmarks-y':
+            left, right, center_h = imgt_y_pseudolandmarks(img, disease_mask)
+            plt.imshow(img)
+            plt.scatter(x=[d[0][0] for d in left], y=[d[0][1] for d in left], color=(253 / 255, 1 / 255, 255 / 255))
+            plt.scatter(x=[d[0][0] for d in right], y=[d[0][1] for d in right], color=(2 / 255, 34 / 255, 255 / 255))
+            plt.scatter(x=[d[0][0] for d in center_h], y=[d[0][1] for d in center_h], color=(255 / 255, 79 / 255, 0 / 255))
+            plt.title('Pseudolandmarks Y')
+    
+    if save:
+        try:
+            fig.savefig(dest + '/' + os.path.basename(path) + '_transformed.png')
+        except Exception as e:
+            print(e)
+        plt.close(fig)
+
+    if color_histogram:
+        fig2 = plt.figure(figsize=(8, 4))
+        fig2.canvas.manager.set_window_title('Image Transformation color Histogram')
+
+        color_histogram, all_frequencies = imgt_color_histogram(img, disease_mask)
+        
+        for color in color_histogram:
+            plt.plot(color_histogram[color][0], color_histogram[color][1], color=color_histogram[color][2])
+        plt.xlabel('Pixel Intensity')
+        plt.xticks(range(0, 256, 25))
+        plt.ylabel('Proportions of pixles (%)')
+        plt.legend(all_frequencies, loc='upper left')
+
+        if save:
+            try:
+                fig2.savefig(dest + '/' + os.path.basename(path) + '_color_histogram.png')
+            except Exception as e:
+                print(e)
+            plt.close(fig2)
+
+def apply_transformation_folder(path, transformation_list, color_histogram, destination):
+    """Apply all transformation to the image in the folder"""
+    with os.scandir(path) as entries:
+        for entry in entries:
+            if entry.is_file():
+                apply_transformation(entry.path, transformation_list, color_histogram, destination, save=True)
+            elif entry.is_dir():
+                apply_transformation_folder(entry.path, transformation_list, color_histogram, destination)
 
 
 def main():
@@ -39,6 +170,21 @@ tranformation on it',
                         expected_type=str,
                         default=None
                         ),
+        OptionObject('transformation',
+                     """The transformation to apply to the image, available transormation are:
+                                background, gaussian-blur,
+                                mask, roi, analyse,
+                                pseudolandmarks-x, pseudolandmarks-y""",
+                        name='t',
+                        expected_type=list,
+                        default=None,
+                        check_function=check_transformation
+                        ),
+        OptionObject('color-histogram', 'Display the color histogram of the image',
+                        name='c',
+                        expected_type=bool,
+                        default=False
+                        )
     ],
     """"""
     )
@@ -51,120 +197,25 @@ tranformation on it',
     except Exception as e:
         print(e)
         return
-    if len(user_input['args']) == 1:
-        path = user_input['args'][0]
-    elif 'source' in user_input and user_input['source'] and 'destination' in user_input and user_input['destination']:
-        path = user_input['source']
-    else:
-        print("No valid path given. If you provide a source please give a destination too.")
+    
+    try:
+        path, path_type, destination = manage_path_input(user_input)
+    except Exception as e:
+        print(e)
         return
 
-    img = mplimg.imread(path)
-    fig = plt.figure(figsize=(8, 4))
-    fig.canvas.manager.set_window_title('Image Transformation')
-    fig.subplots_adjust(wspace=0.3, hspace=0.3)
-    fig.add_subplot(2, 4, 1)
-    plt.imshow(img)
-    plt.title('Original')
 
-    background_mask = imgt_mask_background(img)
-    disease_mask =  imgt_mask_disease(img, background_mask)
+    transformation_list = user_input['transformation']
+    color_histogram = user_input['color-histogram']
 
-    fig.add_subplot(2, 4, 2)
-    plt.imshow(background_mask, cmap='gray')
-    plt.title('Background mask')
-
-    img_gaussianblur = imgt_gaussian_blur(disease_mask, ksize=(7, 7))
-    fig.add_subplot(2, 4, 3)
-    plt.imshow(img_gaussianblur, cmap='gray')
-    plt.title('Gaussian Blur')
-
-    leaf_mask = imgt_leaf_mask(img, disease_mask)
-    fig.add_subplot(2, 4, 4)
-    plt.imshow(leaf_mask, cmap='gray')
-    plt.title('disease mask')
-
-    img_roi = imgt_roi(img, disease_mask)
-    fig.add_subplot(2, 4, 5)
-    plt.imshow(img_roi)
-    plt.title('ROI')
-
-    img_analyse = imgt_analyse(img, disease_mask)
-    fig.add_subplot(2, 4, 6)
-    plt.imshow(img_analyse)
-    plt.title('Analyse')
-
-    top, bottom, center_v = imgt_x_pseudolandmarks(img, disease_mask)
-    fig.add_subplot(2, 4, 7)
-    plt.imshow(img)
-    plt.scatter(x=[d[0][0] for d in bottom], y=[d[0][1] for d in bottom], color=(253 / 255, 1 / 255, 255 / 255))
-    plt.scatter(x=[d[0][0] for d in top], y=[d[0][1] for d in top], color=(2 / 255, 34 / 255, 255 / 255))
-    plt.scatter(x=[d[0][0] for d in center_v], y=[d[0][1] for d in center_v], color=(255 / 255, 79 / 255, 0 / 255))
-    plt.title('Pseudolandmarks X')
-
-    left, right, center_h = imgt_y_pseudolandmarks(img, disease_mask)
-    fig.add_subplot(2, 4, 8)
-    plt.imshow(img)
-    plt.scatter(x=[d[0][0] for d in left], y=[d[0][1] for d in left], color=(253 / 255, 1 / 255, 255 / 255))
-    plt.scatter(x=[d[0][0] for d in right], y=[d[0][1] for d in right], color=(2 / 255, 34 / 255, 255 / 255))
-    plt.scatter(x=[d[0][0] for d in center_h], y=[d[0][1] for d in center_h], color=(255 / 255, 79 / 255, 0 / 255))
-    plt.title('Pseudolandmarks Y')
-
-    fig2 = plt.figure(figsize=(8, 4))
-    fig2.canvas.manager.set_window_title('Image Transformation color Histogram')
-
-    imgt_color_histogram(img, disease_mask)
-    #plt.show()
-    #plt.plot(color_histo)
-    #print(color_histo.to_dict()['datasets']['data-a8b6f4242d2e0e45f52fb950fad353e6'][120])
-
-
-
-    #pcv.params.sample_label = "plant"
-    #gray_img = pcv.rgb2gray(img)
-    #thresh1 = pcv.threshold.binary(gray_img, 35)
-    #thresh2 = pcv.threshold.dual_channels(img, x_channel = "a", y_channel = "b", points = [(80,80),(125,140)], above=True)
-    #fill_img = pcv.fill(bin_img=thresh2, size=60)
-    ## fill_img = pcv.fill_holes(fill_img)
-    #roi = pcv.roi.rectangle(img, 0, 0, img.shape[0], img.shape[1])
-    #mask = pcv.roi.filter(fill_img, roi, roi_type='partial')
-    #analysis_img = pcv.analyze.size(img, mask)
-    #color_histo = pcv.analyze.color(img, mask)
-
-    #top, bottom, center_v = pcv.homology.x_axis_pseudolandmarks(img=img, mask=mask)
-    #left, right, center_h = pcv.homology.y_axis_pseudolandmarks(img=img, mask=mask)
-    #bottom_landmarks = pcv.outputs.observations['plant']['bottom_lmk']['value']
-    ## roi_objects, hierarchy, kept_mask, obj_area = pcv.roi_objects(img, 'partial', roi, roi_hierarchy, objects, obj_hierarchy, device, debug="print")
-    ## print(bottom_landmarks)
-    ## print(bottom)
-    #fig.add_subplot(2, 3, 3)
-    #plt.imshow(analysis_img, cmap='gray')
-    #plt.title('analyse')
-
-    #img_copy = img.copy()
-    ## cv2.drawContours(img_copy, top, -1, (255, 0, 0), pcv.params.line_thickness)
-    ## cv2.drawContours(img_copy, bottom_landmarks, -1, (0, 0, 255), pcv.params.line_thickness)
-    ## cv2.drawContours(img_copy, center_v, -1, (0, 255, 0), pcv.params.line_thickness)
-
-
-    #fig.add_subplot(2, 3, 4)
-    #plt.imshow(mask, cmap='gray')
-    ## plt.plot(chain)
-    #plt.title('Mask')
-
-    #fig.add_subplot(2, 3, 5)
-    ## print(	pcv.outputs.observations['plant_1'])
-    ## x, y = zip(bottom)
-    ## print(x)
-    #x = [d[0][0] for d in bottom] + [d[0][0] for d in top] + [d[0][0] for d in center_v] + [d[0][0] for d in left] + [d[0][0] for d in right] + [d[0][0] for d in center_h]
-    #y = [d[0][1] for d in bottom] + [d[0][1] for d in top] + [d[0][1] for d in center_v] + [d[0][1] for d in left] + [d[0][1] for d in right] + [d[0][1] for d in center_h]
-    #plt.imshow(img_copy)
-    #plt.scatter(x=x, y=y)
-    #plt.title('acute')
-
+    if path_type == 'file':
+        apply_transformation(path, transformation_list, color_histogram)
+    else:
+        apply_transformation_folder(path, transformation_list, color_histogram, destination)
 
     try:
-        plt.show()
+        if path_type == 'file':
+            plt.show()
     except KeyboardInterrupt:
         print("Interrupted by user")
 
