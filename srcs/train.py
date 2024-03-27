@@ -127,10 +127,11 @@ modifications on it',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['acc'])
     
-    callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, start_from_epoch=10)
+    early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, start_from_epoch=10)
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath='./weights/{epoch:02d}-{val_loss:.2f}.weights.h5', save_weights_only=True, monitor='val_loss')
     valid_data = np.array(x_valid), np.array(y_valid)
-    model.fit(np.array(x_train), np.array(y_train), validation_data = valid_data, epochs=20, callbacks = callback)
-    
+    model.fit(np.array(x_train), np.array(y_train), validation_data = valid_data, epochs=20, callbacks = [early_stop, checkpoint])
+    model.save('./model.keras')
 
     
 
