@@ -49,7 +49,7 @@ class ArgsHandler:
 
     def OptionnalArgs(self) -> int:
         """Return the number of non optional arguments."""
-        return len([arg for arg in self.all_args if not arg.Optional]) == len(self.all_args)
+        return all([arg.Optional for arg in self.all_args])
 
     def parse_args(self) -> dict:
         """Read on sys.argv and return a dict with the arguments
@@ -107,7 +107,7 @@ class ArgsHandler:
         for opt in self.all_option:
             if opt.check_function is not None:
                 input = opt.check_function(self, input)
-        if len(input['args']) != len(self.all_args) or not self.OptionnalArgs():
+        if len(input['args']) != len(self.all_args) and not self.OptionnalArgs():
             raise ValueError(f"Expected {len(self.all_args)} \
 arguments, got {len(input['args'])}.")
 
