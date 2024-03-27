@@ -88,73 +88,49 @@ modifications on it',
     except Exception as e:
         print(e)
         return
-    print(len(all_image_dict))
 
     model = models.Sequential()
 
     size = all_image_dict['Apple_scab'][0].shape[0]
-    # size = 28
-    # print(size)
-    model.add(layers.Conv2D(size, (3, 3), activation='relu', input_shape=(size, size, 3)))
+    model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(256, 256, 3)))
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.MaxPooling2D((2, 2)))
     model.add(layers.Flatten())
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(4))
     model.summary()
 
-    nb_data_per_class = 100
-    x_train, y_train = [], []
-    x_valid, y_valid = [], []
+    valid_ratio = 0.9
+    size = len(next(iter(all_image_dict.values())))
+    train_size = int(valid_ratio * size)
+    x_train, x_valid = [], []
+    y_train, y_valid = [], []
+    x_rnd = [i for i in range(0, size)]
+    np.random.shuffle(x_rnd)
     i = 0
     for key, value in all_image_dict.items():
-        x_train += value[:nb_data_per_class]
-        y_train += [i] * nb_data_per_class
-        x_valid += value[nb_data_per_class:nb_data_per_class*2]
-        y_valid += [i] * nb_data_per_class
+        data = np.array(value)[x_rnd[:train_size]]
+        x_train.extend(data)
+        y_train.extend([i] * train_size)
+        x_valid.extend(np.array(value)[x_rnd[train_size:]])
+        y_valid.extend([i] * (size - train_size))
         i += 1
-
-    x_train = np.array(x_train)
-    y_train = np.array(y_train)
-    x_valid = np.array(x_valid)
-    y_valid = np.array(y_valid)
-    # print(x_train.shape)
-    # # return
-    # # mnist = tf.keras.datasets.mnist
-    # # (mx_train, my_train), (mx_valid, my_valid) = mnist.load_data()
-    # for elem in x_train:
-    #     # if type(elem) == 'str480':
-    #     print(elem.shape)
-    # x_train //= 255
-    # x_valid //= 255
-    # print(mnist.load_data()[0][0].shape)
-    # plt.imshow(x_train[0])
-    # plt.show()
-    # model = tf.keras.models.Sequential([
-    # tf.keras.layers.Flatten(input_shape=(256, 256, 3)),
-    # tf.keras.layers.Dense(128, activation='relu'),
-    # tf.keras.layers.Dropout(0.2),
-    # tf.keras.layers.Dense(4)
-    # ])
-
+    labels = all_image_dict.keys()
     model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
-    # try:
-    model.fit(x_train, y_train, epochs=10)
-
-    # except Exception as e:
-    #     print(e)
-    #     return
-    # plt.plot(history.history['accuracy'], label='accuracy')
-    # plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
-    # plt.xlabel('Epoch')
-    # plt.ylabel('Accuracy')
-    # plt.ylim([0.5, 1])
-    # plt.legend(loc='lower right')
-    # plt.show()
-    test_loss, test_acc = model.evaluate(x_valid, y_valid, verbose=2)
-    print(test_loss, test_acc)
+              metrics=['acc'])
+    
+    callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, start_from_epoch=10)
+    valid_data = np.array(x_valid), np.array(y_valid)
+    model.fit(np.array(x_train), np.array(y_train), validation_data = valid_data, epochs=20, callbacks = callback)
+    
 
     
 
