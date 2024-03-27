@@ -3,11 +3,14 @@
 from plantcv import plantcv as pcv
 import matplotlib.image as mplimg
 import matplotlib.pyplot as plt
+import altair
+import seaborn as sns
+import cv2
 
 from utils.ArgsHandler import ArgsHandler, ArgsObject, OptionObject
 from utils.ArgsHandler import display_helper
 
-from utils.data_transformation import gaussian_blur 
+from utils.data_transformation import imgt_mask_disease, imgt_mask_background, imgt_gaussian_blur, imgt_leaf_mask, imgt_roi, imgt_analyse, imgt_x_pseudolandmarks, imgt_y_pseudolandmarks, imgt_color_histogram
 
 
 def main():
@@ -27,12 +30,12 @@ tranformation on it',
                         check_function=display_helper
                         ),
         OptionObject('source', 'The path of the source folder',
-                        name='s',
+                        name='src',
                         expected_type=str,
                         default=None
                         ),
         OptionObject('destination', 'The path of the destination folder',
-                        name='d',
+                        name='dest',
                         expected_type=str,
                         default=None
                         ),
@@ -48,7 +51,6 @@ tranformation on it',
     except Exception as e:
         print(e)
         return
-    
     if len(user_input['args']) == 1:
         path = user_input['args'][0]
     elif 'source' in user_input and user_input['source'] and 'destination' in user_input and user_input['destination']:
@@ -58,18 +60,64 @@ tranformation on it',
         return
 
     img = mplimg.imread(path)
-    fig = plt.figure(figsize=(6, 4))
+    fig = plt.figure(figsize=(8, 4))
     fig.canvas.manager.set_window_title('Image Transformation')
-    fig.subplots_adjust(wspace=0.3, hspace=0.1)
-    fig.add_subplot(2, 3, 1)
+    fig.subplots_adjust(wspace=0.3, hspace=0.3)
+    fig.add_subplot(2, 4, 1)
     plt.imshow(img)
     plt.title('Original')
 
-    img_gaussianblur = gaussian_blur(img, ksize=(7, 7))
+    background_mask = imgt_mask_background(img)
+    disease_mask =  imgt_mask_disease(img, background_mask)
 
-    fig.add_subplot(2, 3, 2)
+    fig.add_subplot(2, 4, 2)
+    plt.imshow(background_mask, cmap='gray')
+    plt.title('Background mask')
+
+    img_gaussianblur = imgt_gaussian_blur(disease_mask, ksize=(7, 7))
+    fig.add_subplot(2, 4, 3)
     plt.imshow(img_gaussianblur, cmap='gray')
     plt.title('Gaussian Blur')
+
+    leaf_mask = imgt_leaf_mask(img, disease_mask)
+    fig.add_subplot(2, 4, 4)
+    plt.imshow(leaf_mask, cmap='gray')
+    plt.title('disease mask')
+
+    img_roi = imgt_roi(img, disease_mask)
+    fig.add_subplot(2, 4, 5)
+    plt.imshow(img_roi)
+    plt.title('ROI')
+
+    img_analyse = imgt_analyse(img, disease_mask)
+    fig.add_subplot(2, 4, 6)
+    plt.imshow(img_analyse)
+    plt.title('Analyse')
+
+    top, bottom, center_v = imgt_x_pseudolandmarks(img, disease_mask)
+    fig.add_subplot(2, 4, 7)
+    plt.imshow(img)
+    plt.scatter(x=[d[0][0] for d in bottom], y=[d[0][1] for d in bottom], color=(253 / 255, 1 / 255, 255 / 255))
+    plt.scatter(x=[d[0][0] for d in top], y=[d[0][1] for d in top], color=(2 / 255, 34 / 255, 255 / 255))
+    plt.scatter(x=[d[0][0] for d in center_v], y=[d[0][1] for d in center_v], color=(255 / 255, 79 / 255, 0 / 255))
+    plt.title('Pseudolandmarks X')
+
+    left, right, center_h = imgt_y_pseudolandmarks(img, disease_mask)
+    fig.add_subplot(2, 4, 8)
+    plt.imshow(img)
+    plt.scatter(x=[d[0][0] for d in left], y=[d[0][1] for d in left], color=(253 / 255, 1 / 255, 255 / 255))
+    plt.scatter(x=[d[0][0] for d in right], y=[d[0][1] for d in right], color=(2 / 255, 34 / 255, 255 / 255))
+    plt.scatter(x=[d[0][0] for d in center_h], y=[d[0][1] for d in center_h], color=(255 / 255, 79 / 255, 0 / 255))
+    plt.title('Pseudolandmarks Y')
+
+    fig2 = plt.figure(figsize=(8, 4))
+    fig2.canvas.manager.set_window_title('Image Transformation color Histogram')
+
+    imgt_color_histogram(img, disease_mask)
+    #plt.show()
+    #plt.plot(color_histo)
+    #print(color_histo.to_dict()['datasets']['data-a8b6f4242d2e0e45f52fb950fad353e6'][120])
+
 
 
     #pcv.params.sample_label = "plant"

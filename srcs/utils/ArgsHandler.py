@@ -73,6 +73,8 @@ class ArgsHandler:
                         input[last_option.fullname] = True
                     else:
                         input[last_option.fullname] = last_option.default
+                else:
+                    raise ValueError(f"Unknown option: {value}")
             elif value.startswith('-'):
                 value = value[1:]
                 if value in [opt.name for opt in self.all_option]:
@@ -83,6 +85,8 @@ class ArgsHandler:
                         input[last_option.fullname] = True
                     else:
                         input[last_option.fullname] = last_option.default
+                else:
+                    raise ValueError(f"Unknown option: {value}")
             else:
                 if last_option is None:
                     input['args'].append(value)
@@ -99,7 +103,7 @@ class ArgsHandler:
                         else:
                             input[last_option.fullname].append(value)
                     else:
-                        raise ValueError(f"Type: {last_option.expected_type}")
+                        raise ValueError(f"Error in option '{last_option.fullname}' expect type: {last_option.expected_type}")
         return input
 
     def check_args(self, input: dict) -> None:
