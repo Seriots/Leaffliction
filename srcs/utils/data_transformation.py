@@ -70,6 +70,17 @@ def imgt_mask_background(img):
     return mask_withoutbg
 
 
+def imgt_clear_background(img, mask):
+    """
+    return pixels of the image that are not in the mask
+
+    :param img: The image to apply the mask to
+    :type img: np.ndarray
+    """
+
+    return pcv.apply_mask(img, mask, "white")
+
+
 def imgt_roi(img, mask):
     """
     return pixels of the image that are not in the mask

@@ -52,7 +52,7 @@ def manage_path_input(user_input):
             if not os.path.isdir(destination):
                 raise ValueError(f"Destination {destination} is not a folder")
         else:
-            os.mkdir(destination)
+            os.makedirs(destination)
     else:
         raise ValueError("No valid path given.\
 If you provide a source please give a destination too.")
