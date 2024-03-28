@@ -18,12 +18,12 @@ def check_transformation(args_handler, u_ipt):
     """Set the default features if the user didn't provide any."""
     if 'augmentation' not in u_ipt or u_ipt['augmentation'] is None:
         u_ipt['augmentation'] = ['normal', 'flip', 'crop',
-                                   'blur', 'brightness',
-                                   'contrast', 'rotate']
+                                 'blur', 'brightness',
+                                 'contrast', 'rotate']
     elif u_ipt['augmentation'] == ['*']:
         u_ipt['augmentation'] = ['normal', 'flip', 'rotate', 'skew',
-                                   'shear', 'crop', 'distortion', 'blur',
-                                   'brightness', 'contrast', 'projective']
+                                 'shear', 'crop', 'distortion', 'blur',
+                                 'brightness', 'contrast', 'projective']
     else:
         for elem in u_ipt['augmentation']:
             if elem not in ['normal', 'flip', 'rotate', 'skew',

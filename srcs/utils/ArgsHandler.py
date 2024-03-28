@@ -47,7 +47,7 @@ class ArgsHandler:
         self.all_option = all_option
         self.all_args = all_args
 
-    def OptionnalArgs(self) -> int:
+    def OptArgs(self) -> int:
         """Return the number of non optional arguments."""
         return all([arg.Optional for arg in self.all_args])
 
@@ -103,7 +103,8 @@ class ArgsHandler:
                         else:
                             input[last_option.fullname].append(value)
                     else:
-                        raise ValueError(f"Error in option '{last_option.fullname}' expect type: {last_option.expected_type}")
+                        raise ValueError(f"Error in option \
+'{last_option.fullname}' expect type: {last_option.expected_type}")
         return input
 
     def check_args(self, input: dict) -> None:
@@ -111,7 +112,7 @@ class ArgsHandler:
         for opt in self.all_option:
             if opt.check_function is not None:
                 input = opt.check_function(self, input)
-        if len(input['args']) != len(self.all_args) and not self.OptionnalArgs():
+        if len(input['args']) != len(self.all_args) and not self.OptArgs():
             raise ValueError(f"Expected {len(self.all_args)} \
 arguments, got {len(input['args'])}.")
 

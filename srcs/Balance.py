@@ -112,7 +112,6 @@ def balance_data(all_path: dict, max_size: int, allowed_transfo: list):
 
             transfo = augmentation[aug_use]
 
-
             img = mplimg.imread(img_path)
             new_img = transfo(img)
 
@@ -190,7 +189,7 @@ def main():
     except Exception as e:
         print(e)
         return
-    
+
     if mode == 'balance':
         if len(all_path.items()) == 0:
             print("Error in depth alignement")
