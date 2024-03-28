@@ -17,6 +17,7 @@ def imgt_gaussian_blur(mask, ksize=(3, 3)):
 
     return pcv.gaussian_blur(mask, ksize)
 
+
 def imgt_leaf_mask(img, mask):
     """
     return pixels of the image that are not in the mask
@@ -27,6 +28,7 @@ def imgt_leaf_mask(img, mask):
 
     return pcv.apply_mask(img, mask, "white")
 
+
 def imgt_mask_disease(img, background_mask):
     """
     return pixels of the image that are not in the mask
@@ -34,11 +36,17 @@ def imgt_mask_disease(img, background_mask):
     :param img: The image to apply the mask to
     :type img: np.ndarray
     """
-    mask = pcv.threshold.dual_channels(img, x_channel = "a", y_channel = "b", points = [(55,55),(100,115)], above=True)
-    
+    mask = pcv.threshold.dual_channels(img,
+                                       x_channel="a",
+                                       y_channel="b",
+                                       points=[(55, 55), (100, 115)],
+                                       above=True
+                                       )
+
     img_mask = pcv.logical_xor(background_mask, mask)
 
-    return img_mask #pcv.apply_mask(img, img_mask, "white")
+    return img_mask
+
 
 def imgt_mask_background(img):
     """
@@ -60,6 +68,7 @@ def imgt_mask_background(img):
     mask_withoutbg = pcv.fill_holes(bin_img=mask_withoutbg)
 
     return mask_withoutbg
+
 
 def imgt_roi(img, mask):
     """
@@ -109,6 +118,7 @@ def imgt_analyse(img, mask):
 
     return analysis_img
 
+
 def imgt_x_pseudolandmarks(img, mask):
     """
     return pixels of the image that are not in the mask
@@ -125,9 +135,10 @@ def imgt_x_pseudolandmarks(img, mask):
         h=mask.shape[1]
     )
     roi_mask = pcv.roi.filter(mask=mask, roi=roi, roi_type='partial')
-    top, bottom, center_v = pcv.homology.x_axis_pseudolandmarks(img=img, mask=roi_mask)
+    top, bottom, center_v = pcv.homology.x_axis_pseudolandmarks(img, roi_mask)
 
     return top, bottom, center_v
+
 
 def imgt_y_pseudolandmarks(img, mask):
     """
@@ -145,9 +156,10 @@ def imgt_y_pseudolandmarks(img, mask):
         h=mask.shape[1]
     )
     roi_mask = pcv.roi.filter(mask=mask, roi=roi, roi_type='partial')
-    left, right, center_h = pcv.homology.y_axis_pseudolandmarks(img=img, mask=roi_mask)
+    left, right, center_h = pcv.homology.y_axis_pseudolandmarks(img, roi_mask)
 
     return left, right, center_h
+
 
 def center_from_0_to_127(x, y):
     """
@@ -159,6 +171,7 @@ def center_from_0_to_127(x, y):
 
     return [elem + 127 for elem in x], y
 
+
 def from_0_100_to_0_255(x, y):
     """
     return pixels of the image that are not in the mask
@@ -169,6 +182,7 @@ def from_0_100_to_0_255(x, y):
 
     return [elem * 255 / 100 for elem in x], y
 
+
 def from_360_to_255(x, y):
     """
     return pixels of the image that are not in the mask
@@ -178,24 +192,28 @@ def from_360_to_255(x, y):
     """
     return x[:127], y[:127]
 
+
 def imgt_color_histogram(img, mask):
     """
     return pixels of the image that are not in the mask
-    
+
     :param img: The image to apply the mask to
     :type img: np.ndarray
     """
 
     all_frequencies = {
        'blue_frequencies': [None, 'blue'],
-       'blue-yellow_frequencies': [center_from_0_to_127, (230 / 255, 230 / 255, 0)],
+       'blue-yellow_frequencies': [center_from_0_to_127,
+                                   (230 / 255, 230 / 255, 0)],
        'green_frequencies': [None, 'green'],
-       'green-magenta_frequencies': [center_from_0_to_127, (230 / 255, 0, 230 / 255)],
+       'green-magenta_frequencies': [center_from_0_to_127,
+                                     (230 / 255, 0, 230 / 255)],
        'hue_frequencies': [from_360_to_255, 'purple'],
        'lightness_frequencies': [from_0_100_to_0_255, 'grey'],
        'red_frequencies': [None, 'red'],
-       'saturation_frequencies': [from_0_100_to_0_255, (0, 230 / 255, 230 / 255)],
-       'value_frequencies': [from_0_100_to_0_255, 'orange'], 
+       'saturation_frequencies': [from_0_100_to_0_255,
+                                  (0, 230 / 255, 230 / 255)],
+       'value_frequencies': [from_0_100_to_0_255, 'orange'],
     }
 
     roi = pcv.roi.rectangle(
@@ -214,5 +232,5 @@ def imgt_color_histogram(img, mask):
         if value[0] is not None:
             x, y = value[0](x, y)
         out[key] = (x, y, value[1])
-    
+
     return out, all_frequencies.keys()
