@@ -15,7 +15,8 @@ def load_all_image(path: str) -> list:
     with os.scandir(path) as it:
         for entry in it:
             if entry.is_file():
-                img = preprocessing.load_img(entry.path, target_size=(256, 256))
+                img = preprocessing.load_img(entry.path,
+                                             target_size=(256, 256))
 
                 img_array = preprocessing.img_to_array(img)
 
