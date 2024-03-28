@@ -82,6 +82,11 @@ modifications on it',
                          default=0.9,
                          check_function=check_ratio
                          ),
+            OptionObject('epochs', 'The number of epoch',
+                         name='e',
+                         expected_type=int,
+                         default=10
+                         )
         ],
         """"""
     )
@@ -144,11 +149,11 @@ modifications on it',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['acc'])
     
-    early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, start_from_epoch=10)
-    datetime = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath=f'./weights/{datetime}/{epoch:02d}-{val_loss:.2f}.weights.h5', save_weights_only=True, monitor='val_loss')
+    early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, start_from_epoch=7)
+    date = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath='./weights/' + date + '/{epoch:02d}-{val_loss:.2f}.weights.h5', save_weights_only=True, monitor='val_loss')
     valid_data = np.array(x_valid), np.array(y_valid)
-    model.fit(np.array(x_train), np.array(y_train), validation_data = valid_data, epochs=3, callbacks = [early_stop, checkpoint])
+    model.fit(np.array(x_train), np.array(y_train), validation_data = valid_data, epochs=user_input['epochs'], callbacks = [early_stop, checkpoint])
     model.save('./model.keras')
     try:
         pickle.dump(labels, open('labels.pkl', 'wb'))
