@@ -125,7 +125,7 @@ modifications on it',
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(layers.Flatten())
     model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(len(all_image_dict.keys())), activation='softmax')
+    model.add(layers.Dense(len(all_image_dict.keys()), activation='softmax'))
     model.summary()
 
     valid_ratio = user_input['validation-ratio']
@@ -142,9 +142,9 @@ modifications on it',
         x_valid.extend(np.array(value)[x_rnd[train_size:]])
         y_valid.extend([i] * (size - train_size))
 
-    labels = all_image_dict.keys()
+    labels = list(all_image_dict.keys())
 
-    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
     model.compile(optimizer='adam', loss=loss, metrics=['acc'])
 
     early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
