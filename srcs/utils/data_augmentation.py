@@ -1,6 +1,7 @@
 import numpy as np
 import skimage
 import augly.image as imaugs
+import random
 
 
 def check_image(func):
@@ -81,20 +82,23 @@ def image_distortion(image: np.ndarray) -> np.ndarray:
 
 
 @check_image
-def image_blur(image: np.ndarray, factor: float = 2) -> np.ndarray:
+def image_blur(image: np.ndarray, factor: float = 3) -> np.ndarray:
     """Blur an image"""
+    factor = random.random() * factor
     return imaugs.aug_np_wrapper(image, imaugs.blur, radius=factor)
 
 
 @check_image
-def image_brightness(image: np.ndarray, factor: float = 1.5) -> np.ndarray:
+def image_brightness(image: np.ndarray, factor: float = 2.5) -> np.ndarray:
     """Change brightness of an image"""
+    factor = random.random() * factor
     return imaugs.aug_np_wrapper(image, imaugs.brightness, factor=factor)
 
 
 @check_image
-def image_contrast(image: np.ndarray, factor: float = 2.0) -> np.ndarray:
+def image_contrast(image: np.ndarray, factor: float = 3.0) -> np.ndarray:
     """Change contrast of an image"""
+    factor = random.random() * factor
     return imaugs.aug_np_wrapper(image, imaugs.contrast, factor=factor)
 
 

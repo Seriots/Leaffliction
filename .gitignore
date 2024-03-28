@@ -3,6 +3,13 @@ images/*
 srcs/test.py
 srcs/plantcv_test.py
 
+test_images/
+test_images/*
+*images*
+*model*
+*.pkl
+*.keras
+*.h5
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

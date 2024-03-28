@@ -17,8 +17,7 @@ from utils.data_augmentation import image_contrast, image_projective
 def check_transformation(args_handler, u_ipt):
     """Set the default features if the user didn't provide any."""
     if 'transformation' not in u_ipt or u_ipt['transformation'] is None:
-        u_ipt['transformation'] = ['flip', 'crop',
-                                   'blur', 'brightness',
+        u_ipt['transformation'] = ['flip', 'blur', 'brightness',
                                    'contrast', 'rotate']
     elif u_ipt['transformation'] == ['*']:
         u_ipt['transformation'] = ['flip', 'rotate', 'skew',
@@ -113,6 +112,7 @@ def balance_data(all_path: dict, max_size: int, allowed_transfo: list):
 
             transfo = augmentation[aug_use]
 
+
             img = mplimg.imread(img_path)
             new_img = transfo(img)
 
@@ -197,7 +197,11 @@ def main():
             return
         max_size = max(all_path.values())
 
-        balance_data(all_path, max_size, allowed_transfo)
+        try:
+            balance_data(all_path, max_size, allowed_transfo)
+        except Exception as e:
+            print(e)
+            return
     else:
         clear_data(all_path, allowed_transfo)
 

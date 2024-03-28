@@ -4,7 +4,9 @@ import os
 import matplotlib.image as mplimg
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
 import tensorflow as tf
+import pickle
 from tensorflow.keras import models, layers
 
 from utils.ArgsHandler import ArgsHandler, ArgsObject, OptionObject
@@ -44,6 +46,10 @@ def load_all_image(path: str, depth: int) -> list[tuple]:
                     all_path += load_all_image(entry.path, depth - 1)
         return all_path
 
+def check_ratio(args_handler, user_input):
+    if user_input['validation-ratio'] <= 0 or user_input['validation-ratio'] >= 1:
+        raise ValueError("The ratio must be between 0 and 1")
+    return user_input
 
 def main():
     """Main"""
@@ -64,6 +70,17 @@ modifications on it',
                          name='d',
                          expected_type=int,
                          default=2,
+                         ),
+            OptionObject('model', 'The model to use',
+                         name='m',
+                         expected_type=str,
+                         default='model.keras',
+                         ),
+            OptionObject('validation-ratio', 'The ratio of the validation data',
+                         name='v',
+                         expected_type=float,
+                         default=0.9,
+                         check_function=check_ratio
                          ),
         ],
         """"""
@@ -104,36 +121,40 @@ modifications on it',
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(layers.Flatten())
     model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(4))
+    model.add(layers.Dense(len(all_image_dict.keys())))
     model.summary()
 
-    valid_ratio = 0.9
+    valid_ratio = user_input['validation-ratio']
     size = len(next(iter(all_image_dict.values())))
     train_size = int(valid_ratio * size)
     x_train, x_valid = [], []
     y_train, y_valid = [], []
     x_rnd = [i for i in range(0, size)]
     np.random.shuffle(x_rnd)
-    i = 0
-    for key, value in all_image_dict.items():
+    for i, value in enumerate(all_image_dict.values()):
         data = np.array(value)[x_rnd[:train_size]]
         x_train.extend(data)
         y_train.extend([i] * train_size)
         x_valid.extend(np.array(value)[x_rnd[train_size:]])
         y_valid.extend([i] * (size - train_size))
-        i += 1
+
     labels = all_image_dict.keys()
+
     model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['acc'])
     
     early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, start_from_epoch=10)
-    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath='./weights/{epoch:02d}-{val_loss:.2f}.weights.h5', save_weights_only=True, monitor='val_loss')
+    datetime = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath=f'./weights/{datetime}/{epoch:02d}-{val_loss:.2f}.weights.h5', save_weights_only=True, monitor='val_loss')
     valid_data = np.array(x_valid), np.array(y_valid)
-    model.fit(np.array(x_train), np.array(y_train), validation_data = valid_data, epochs=20, callbacks = [early_stop, checkpoint])
+    model.fit(np.array(x_train), np.array(y_train), validation_data = valid_data, epochs=3, callbacks = [early_stop, checkpoint])
     model.save('./model.keras')
-
-    
+    try:
+        pickle.dump(labels, open('labels.pkl', 'wb'))
+    except Exception as e:
+        print(e)
+        return
 
 if __name__ == "__main__":
     main()
