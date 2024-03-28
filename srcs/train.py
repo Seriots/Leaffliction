@@ -12,6 +12,23 @@ from utils.ArgsHandler import ArgsHandler, ArgsObject, OptionObject
 from utils.ArgsHandler import display_helper
 
 
+def save_test_images(x_test, y_test, labels):
+    if os.path.isdir('test_images'):
+        for image in os.listdir('test_images'):
+            try:
+                os.remove('test_images/' + image)
+            except Exception as e:
+                print(f"Error while deleting {image}: {e}")
+    else:
+        os.mkdir('test_images')
+
+    for (image, label, i) in zip(x_test, y_test, range(len(y_test))):
+        try:
+            mplimg.imsave(f"test_images/{labels[label]}_{i}.JPG", image)
+        except Exception as e:
+            print(f"Error while saving {image}: {e}")
+
+
 def list_to_dict(all_image: list) -> dict:
     """Transform a list of tuple into a dict"""
     result = {}
@@ -46,7 +63,12 @@ def load_all_image(path: str, depth: int) -> list[tuple]:
 def check_ratio(args_handler, user_input):
     if user_input['validation-ratio'] <= 0 or \
        user_input['validation-ratio'] >= 1:
-        raise ValueError("The ratio must be between 0 and 1")
+        raise ValueError("Validation ratio must be between 0 and 1")
+    if user_input['test-ratio'] < 0 or \
+       user_input['test-ratio'] >= 1:
+        raise ValueError("Test ratio must be between 0 and 1")
+    if user_input['test-ratio'] + user_input['validation-ratio'] >= 1:
+        raise ValueError("Sum of ratios can't be greater than 1")
     return user_input
 
 
@@ -79,6 +101,12 @@ modifications on it',
                          name='v',
                          expected_type=float,
                          default=0.9,
+                         check_function=check_ratio
+                         ),
+            OptionObject('test-ratio', 'The ratio of validation data',
+                         name='t',
+                         expected_type=float,
+                         default=0.0,
                          check_function=check_ratio
                          ),
             OptionObject('epochs', 'The number of epoch',
@@ -127,21 +155,34 @@ modifications on it',
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(len(all_image_dict.keys()), activation='softmax'))
     model.summary()
+
     valid_ratio = user_input['validation-ratio']
+    test_ratio = user_input['test-ratio']
+
     size = len(next(iter(all_image_dict.values())))
     train_size = int(valid_ratio * size)
-    x_train, x_valid = [], []
-    y_train, y_valid = [], []
+    test_size = int(test_ratio * size)
+
+    x_train, x_valid, x_test = [], [], []
+    y_train, y_valid, y_test = [], [], []
+
     x_rnd = [i for i in range(0, size)]
     np.random.shuffle(x_rnd)
+
     for i, value in enumerate(all_image_dict.values()):
         data = np.array(value)[x_rnd[:train_size]]
         x_train.extend(data)
-        y_train.extend([i] * train_size)
-        x_valid.extend(np.array(value)[x_rnd[train_size:]])
-        y_valid.extend([i] * (size - train_size))
+        y_train.extend([i] * (train_size))
+        test_data = np.array(value)[x_rnd[train_size:train_size + test_size]]
+        x_test.extend(test_data)
+        y_test.extend([i] * test_size)
+        x_valid.extend(np.array(value)[x_rnd[train_size + test_size:]])
+        y_valid.extend([i] * (size - train_size - test_size))
 
     labels = list(all_image_dict.keys())
+
+    if x_test is not []:
+        save_test_images(x_test, y_test, labels)
 
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     model.compile(optimizer='adam', loss=loss, metrics=['acc'])

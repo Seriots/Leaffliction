@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import tensorflow.keras.preprocessing.image as preprocessing
 import pickle
 import os
+import numpy as np
 
 from utils.ArgsHandler import ArgsHandler, ArgsObject, OptionObject
 from utils.ArgsHandler import display_helper
@@ -21,10 +22,11 @@ def load_all_image(path: str) -> list:
                                              target_size=(256, 256))
 
                 img_array = preprocessing.img_to_array(img)
+                # print(img_array.shape)
 
-                img_array = tf.expand_dims(img_array, 0)
-
-                all_img.append((entry.path, img_array, img))
+                # img_array = tf.expand_dims(img_array, 0)
+                # print(img_array.shape)
+                all_img.append((entry.name, img_array, img))
             elif entry.is_dir():
                 all_img += load_all_image(entry.path)
         print(f"{os.path.basename(path)} done")
@@ -53,6 +55,10 @@ modifications on it',
                          ),
             OptionObject('plot', 'Plot the image',
                          name='p',
+                         expected_type=bool,
+                         default=False,),
+            OptionObject('show', 'Show the prediction value',
+                         name='s',
                          expected_type=bool,
                          default=False,)
         ],
@@ -84,27 +90,42 @@ modifications on it',
         print(e)
         return
 
-    for name, img, real_img in all_image:
-        predictions = model.predict(img)
-        score = predictions[0]
 
-        GREEN = '\033[92m'
-        RED = '\033[91m'
-        END = '\033[0m'
-        C = GREEN if labels[tf.argmax(score).numpy()]\
-            in name else RED
-        print(f"{C}{name} == {labels[tf.argmax(score)]}\
--> {100 * tf.reduce_max(score):.2f}%{END}")
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
 
-        if user_input['plot']:
-            color = 'green' if labels[tf.argmax(score)]\
-                in name else 'red'
-            plt.text(0, -17, os.path.basename(name), color=color, fontsize=25)
-            plt.imshow(real_img)
-            try:
-                plt.show()
-            except KeyboardInterrupt:
-                break
+    right_guesses = 0
+
+    if not user_input['show']:
+        path, images_array, a = zip(*all_image)
+        predictions = model.predict(np.array(images_array))
+        right_guesses = sum((labels[tf.argmax(score)] in name) for (name, score) in zip(path, predictions))
+    else:
+        for name, img, real_img in all_image:
+
+            score = model(np.expand_dims(img, axis = 0))[0]
+            is_right_guess = labels[tf.argmax(score)] in name
+
+            C = GREEN if is_right_guess else RED
+            print(f"{C}{name:^24} == {labels[tf.argmax(score)]:^15}\
+ -> {100 * tf.reduce_max(score):.2f}%{END}")
+
+            right_guesses += is_right_guess
+
+            if user_input['plot']:
+                color = 'green' if is_right_guess else 'red'
+                plt.text(0, -17, os.path.basename(name), color=color, fontsize=25)
+                plt.imshow(real_img)
+                try:
+                    plt.show()
+                except KeyboardInterrupt:
+                    break
+
+    valid_percent = 100 * right_guesses / len(all_image)
+    print(BOLD + f"{valid_percent:.2f}%" + END +
+          " of images where correctly identified")
 
 
 if __name__ == "__main__":
