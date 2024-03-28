@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import tensorflow.keras.preprocessing.image as preprocessing
@@ -84,7 +86,7 @@ modifications on it',
 
     for name, img, real_img in all_image:
         predictions = model.predict(img)
-        score = tf.nn.softmax(predictions[0])
+        score = predictions[0]
 
         print(f"{name} == {labels[tf.argmax(score).numpy()]}\
 -> {100 * tf.reduce_max(score):.2f}%")
