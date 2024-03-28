@@ -2,7 +2,6 @@
 
 import os
 import matplotlib.image as mplimg
-import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 import tensorflow as tf
@@ -12,8 +11,6 @@ from tensorflow.keras import models, layers
 from utils.ArgsHandler import ArgsHandler, ArgsObject, OptionObject
 from utils.ArgsHandler import display_helper
 
-def rgb2gray(rgb):
-    return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140])
 
 def list_to_dict(all_image: list) -> dict:
     """Transform a list of tuple into a dict"""
@@ -34,7 +31,6 @@ def load_all_image(path: str, depth: int) -> list[tuple]:
                 if entry.is_file():
                     entry_path = entry.path
                     img = mplimg.imread(entry_path)
-                    # img = rgb2gray(img)
                     all_img.append(img)
             print(f"{os.path.basename(path)} done")
             return [(os.path.basename(path), all_img)]
@@ -46,10 +42,13 @@ def load_all_image(path: str, depth: int) -> list[tuple]:
                     all_path += load_all_image(entry.path, depth - 1)
         return all_path
 
+
 def check_ratio(args_handler, user_input):
-    if user_input['validation-ratio'] <= 0 or user_input['validation-ratio'] >= 1:
+    if user_input['validation-ratio'] <= 0 or \
+       user_input['validation-ratio'] >= 1:
         raise ValueError("The ratio must be between 0 and 1")
     return user_input
+
 
 def main():
     """Main"""
@@ -76,7 +75,7 @@ modifications on it',
                          expected_type=str,
                          default='model.keras',
                          ),
-            OptionObject('validation-ratio', 'The ratio of the validation data',
+            OptionObject('validation-ratio', 'The ratio of validation data',
                          name='v',
                          expected_type=float,
                          default=0.9,
@@ -99,10 +98,10 @@ modifications on it',
     except Exception as e:
         print(e)
         return
-    
+
     path = user_input['args'][0]
     depth = user_input['depth']
-    
+
     try:
         all_image = load_all_image(path, depth)
         all_image_dict = list_to_dict(all_image)
@@ -113,8 +112,8 @@ modifications on it',
 
     model = models.Sequential()
 
-    size = all_image_dict['Apple_scab'][0].shape[0]
-    model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(256, 256, 3)))
+    model.add(tf.keras.Input(shape=(256, 256, 3)))
+    model.add(layers.Conv2D(32, (3, 3), activation='relu'))
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(layers.Conv2D(64, (3, 3), activation='relu'))
     model.add(layers.MaxPooling2D((2, 2)))
@@ -126,7 +125,7 @@ modifications on it',
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(layers.Flatten())
     model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(len(all_image_dict.keys())))
+    model.add(layers.Dense(len(all_image_dict.keys())), activation='softmax')
     model.summary()
 
     valid_ratio = user_input['validation-ratio']
@@ -145,21 +144,32 @@ modifications on it',
 
     labels = all_image_dict.keys()
 
-    model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['acc'])
-    
-    early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, start_from_epoch=7)
+    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    model.compile(optimizer='adam', loss=loss, metrics=['acc'])
+
+    early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                                  patience=3,
+                                                  start_from_epoch=7)
+
     date = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}"
-    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath='./weights/' + date + '/{epoch:02d}-{val_loss:.2f}.weights.h5', save_weights_only=True, monitor='val_loss')
+    filepath = './weights/' + date + '/{epoch:02d}-{val_loss:.2f}.weights.h5'
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath=filepath,
+                                                    save_weights_only=True,
+                                                    monitor='val_loss')
+
     valid_data = np.array(x_valid), np.array(y_valid)
-    model.fit(np.array(x_train), np.array(y_train), validation_data = valid_data, epochs=user_input['epochs'], callbacks = [early_stop, checkpoint])
+    model.fit(np.array(x_train),
+              np.array(y_train),
+              validation_data=valid_data,
+              epochs=user_input['epochs'],
+              callbacks=[early_stop, checkpoint])
     model.save('./model.keras')
     try:
         pickle.dump(labels, open('labels.pkl', 'wb'))
     except Exception as e:
         print(e)
         return
+
 
 if __name__ == "__main__":
     main()
