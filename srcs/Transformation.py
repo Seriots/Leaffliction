@@ -14,19 +14,19 @@ from utils.data_transformation import imgt_x_pseudolandmarks, imgt_analyse
 from utils.data_transformation import imgt_color_histogram
 
 
-def check_transformation(args_handler, input_user):
+def check_transformation(args_handler, inpt_u):
     """Modify the transformation input of the user"""
-    if 'transformation' not in input_user or input_user['transformation'] is None:
-        input_user['transformation'] = ['background', 'gaussian-blur', 'mask', 
-                                        'roi', 'analyse',
-                                        'pseudolandmarks-x', 'pseudolandmarks-y']
+    if 'transformation' not in inpt_u or inpt_u['transformation'] is None:
+        inpt_u['transformation'] = ['background', 'gaussian-blur', 'mask',
+                                    'roi', 'analyse',
+                                    'pseudolandmarks-x', 'pseudolandmarks-y']
     else:
-        for elem in input_user['transformation']:
-            if elem not in ['background', 'gaussian-blur', 'mask', 
+        for elem in inpt_u['transformation']:
+            if elem not in ['background', 'gaussian-blur', 'mask',
                             'roi', 'analyse',
                             'pseudolandmarks-x', 'pseudolandmarks-y']:
                 raise ValueError(f"Transformation {elem} is not supported")
-    return input_user
+    return inpt_u
 
 
 def manage_path_input(user_input):
@@ -38,19 +38,33 @@ def manage_path_input(user_input):
             path_type = 'file'
         else:
             raise ValueError(f"Path {path} is not a file")
-    elif 'source' in user_input and user_input['source'] and 'destination' in user_input and user_input['destination']:
+    elif 'source' in user_input \
+            and user_input['source'] \
+            and 'destination' in user_input \
+            and user_input['destination']:
         path = user_input['source']
         destination = user_input['destination']
-        if (os.path.isdir(path)) and (os.path.isdir(user_input['destination'])):
+        if (os.path.isdir(path)):
             path_type = 'folder'
         else:
             raise ValueError(f"Path {path} is not a folder")
+        if os.path.exists(destination):
+            if not os.path.isdir(destination):
+                raise ValueError(f"Destination {destination} is not a folder")
+        else:
+            os.mkdir(destination)
     else:
-        print("No valid path given. If you provide a source please give a destination too.")
+        raise ValueError("No valid path given.\
+If you provide a source please give a destination too.")
     return path, path_type, destination
 
 
-def apply_transformation(path, transformation_list, color_histogram, dest=None, save=False):
+def apply_transformation(path,
+                         transformation_list,
+                         color_histogram,
+                         dest=None,
+                         save=False
+                         ):
     """Apply all transformation to the image"""
     try:
         img = mplimg.imread(path)
@@ -62,14 +76,14 @@ def apply_transformation(path, transformation_list, color_histogram, dest=None, 
     fig.canvas.manager.set_window_title('Image Transformation')
     fig.subplots_adjust(wspace=0.3, hspace=0.3)
 
-    subplots_size = (len(transformation_list) + 1) // 4
+    subplots_size = len(transformation_list) // 4 + 1
     fig.add_subplot(subplots_size, 4, 1)
 
     plt.imshow(img)
     plt.title('Original')
-    
+
     background_mask = imgt_mask_background(img)
-    disease_mask =  imgt_mask_disease(img, background_mask)
+    disease_mask = imgt_mask_disease(img, background_mask)
 
     for i, transformation in enumerate(transformation_list):
         fig.add_subplot(subplots_size, 4, i + 2)
@@ -93,101 +107,118 @@ def apply_transformation(path, transformation_list, color_histogram, dest=None, 
             plt.imshow(analyse_img)
             plt.title('Analyse')
         elif transformation == 'pseudolandmarks-x':
-            top, bottom, center_v = imgt_x_pseudolandmarks(img, disease_mask)
+            top, bot, ctrv = imgt_x_pseudolandmarks(img, disease_mask)
             plt.imshow(img)
-            plt.scatter(x=[d[0][0] for d in bottom], y=[d[0][1] for d in bottom], color=(253 / 255, 1 / 255, 255 / 255))
-            plt.scatter(x=[d[0][0] for d in top], y=[d[0][1] for d in top], color=(2 / 255, 34 / 255, 255 / 255))
-            plt.scatter(x=[d[0][0] for d in center_v], y=[d[0][1] for d in center_v], color=(255 / 255, 79 / 255, 0 / 255))
+            plt.scatter(x=[d[0][0] for d in bot], y=[d[0][1] for d in bot],
+                        color=(253 / 255, 1 / 255, 255 / 255))
+            plt.scatter(x=[d[0][0] for d in top], y=[d[0][1] for d in top],
+                        color=(2 / 255, 34 / 255, 255 / 255))
+            plt.scatter(x=[d[0][0] for d in ctrv], y=[d[0][1] for d in ctrv],
+                        color=(255 / 255, 79 / 255, 0 / 255))
             plt.title('Pseudolandmarks X')
         elif transformation == 'pseudolandmarks-y':
-            left, right, center_h = imgt_y_pseudolandmarks(img, disease_mask)
+            lft, rht, ctrh = imgt_y_pseudolandmarks(img, disease_mask)
             plt.imshow(img)
-            plt.scatter(x=[d[0][0] for d in left], y=[d[0][1] for d in left], color=(253 / 255, 1 / 255, 255 / 255))
-            plt.scatter(x=[d[0][0] for d in right], y=[d[0][1] for d in right], color=(2 / 255, 34 / 255, 255 / 255))
-            plt.scatter(x=[d[0][0] for d in center_h], y=[d[0][1] for d in center_h], color=(255 / 255, 79 / 255, 0 / 255))
+            plt.scatter(x=[d[0][0] for d in lft], y=[d[0][1] for d in lft],
+                        color=(253 / 255, 1 / 255, 255 / 255))
+            plt.scatter(x=[d[0][0] for d in rht], y=[d[0][1] for d in rht],
+                        color=(2 / 255, 34 / 255, 255 / 255))
+            plt.scatter(x=[d[0][0] for d in ctrh], y=[d[0][1] for d in ctrh],
+                        color=(255 / 255, 79 / 255, 0 / 255))
             plt.title('Pseudolandmarks Y')
-    
+
     if save:
         try:
-            fig.savefig(dest + '/' + os.path.basename(path) + '_transformed.png')
+            fig.savefig(f"{dest}/{os.path.basename(path)[:-4]}_transfo.png")
         except Exception as e:
             print(e)
         plt.close(fig)
 
     if color_histogram:
         fig2 = plt.figure(figsize=(8, 4))
-        fig2.canvas.manager.set_window_title('Image Transformation color Histogram')
+        fig2.canvas.manager.set_window_title('Image Color Histogram')
 
-        color_histogram, all_frequencies = imgt_color_histogram(img, disease_mask)
-        
-        for color in color_histogram:
-            plt.plot(color_histogram[color][0], color_histogram[color][1], color=color_histogram[color][2])
+        c_hist, all_freq = imgt_color_histogram(img, disease_mask)
+
+        for color in c_hist:
+            plt.plot(c_hist[color][0],
+                     c_hist[color][1],
+                     color=c_hist[color][2]
+                     )
         plt.xlabel('Pixel Intensity')
         plt.xticks(range(0, 256, 25))
         plt.ylabel('Proportions of pixles (%)')
-        plt.legend(all_frequencies, loc='upper left')
+        plt.legend(all_freq, loc='upper left')
 
         if save:
             try:
-                fig2.savefig(dest + '/' + os.path.basename(path) + '_color_histogram.png')
+                fig2.savefig(f"{dest}/{os.path.basename(path)[:-4]}_hist.png")
             except Exception as e:
                 print(e)
             plt.close(fig2)
 
-def apply_transformation_folder(path, transformation_list, color_histogram, destination):
+
+def apply_transformation_folder(path, transfo, c_hist, dest):
     """Apply all transformation to the image in the folder"""
     with os.scandir(path) as entries:
         for entry in entries:
             if entry.is_file():
-                apply_transformation(entry.path, transformation_list, color_histogram, destination, save=True)
+                apply_transformation(entry.path, transfo, c_hist, dest, True)
             elif entry.is_dir():
-                apply_transformation_folder(entry.path, transformation_list, color_histogram, destination)
+                apply_transformation_folder(entry.path, transfo, c_hist, dest)
 
 
 def main():
     """Main"""
 
     args_handler = ArgsHandler(
-    'This program take an image as arguments en display some \
-tranformation on it',
-    [
-        ArgsObject('data_path', 'The path of the targeted image or targeted folder', Optional=True)
-    ],
-    [
-        OptionObject('help', 'Show this help message',
-                        name='h',
-                        expected_type=bool,
-                        default=False,
-                        check_function=display_helper
-                        ),
-        OptionObject('source', 'The path of the source folder',
-                        name='src',
-                        expected_type=str,
-                        default=None
-                        ),
-        OptionObject('destination', 'The path of the destination folder',
-                        name='dest',
-                        expected_type=str,
-                        default=None
-                        ),
-        OptionObject('transformation',
-                     """The transformation to apply to the image, available transormation are:
-                                background, gaussian-blur,
-                                mask, roi, analyse,
-                                pseudolandmarks-x, pseudolandmarks-y""",
-                        name='t',
-                        expected_type=list,
-                        default=None,
-                        check_function=check_transformation
-                        ),
-        OptionObject('color-histogram', 'Display the color histogram of the image',
-                        name='c',
-                        expected_type=bool,
-                        default=False
-                        )
-    ],
-    """"""
-    )
+                    'This program take an image as \
+arguments and display some tranformation on it',
+                    [
+                        ArgsObject('data_path',
+                                   'The path of the targeted image \
+or targeted folder',
+                                   Optional=True)
+                    ],
+                    [
+                        OptionObject('help', 'Show this help message',
+                                     name='h',
+                                     expected_type=bool,
+                                     default=False,
+                                     check_function=display_helper
+                                     ),
+                        OptionObject('source', 'The path of the source folder',
+                                     name='src',
+                                     expected_type=str,
+                                     default=None
+                                     ),
+                        OptionObject('destination', 'The path of the \
+destination folder',
+                                     name='dest',
+                                     expected_type=str,
+                                     default=None
+                                     ),
+                        OptionObject('transformation',
+                                     """The transformation to apply to \
+the image, available transormation are:
+                                                background, gaussian-blur,
+                                                mask, roi, analyse,
+                                                pseudolandmarks-x,
+                                                pseudolandmarks-y""",
+                                     name='t',
+                                     expected_type=list,
+                                     default=None,
+                                     check_function=check_transformation
+                                     ),
+                        OptionObject('color-histogram', 'Display the color \
+histogram of the image',
+                                     name='c',
+                                     expected_type=bool,
+                                     default=False
+                                     )
+                    ],
+                    """"""
+                    )
 
     try:
         user_input = args_handler.parse_args()
@@ -197,21 +228,25 @@ tranformation on it',
     except Exception as e:
         print(e)
         return
-    
+
     try:
         path, path_type, destination = manage_path_input(user_input)
     except Exception as e:
         print(e)
         return
 
-
     transformation_list = user_input['transformation']
     color_histogram = user_input['color-histogram']
 
     if path_type == 'file':
-        apply_transformation(path, transformation_list, color_histogram)
+        apply_transformation(path,
+                             transformation_list,
+                             color_histogram)
     else:
-        apply_transformation_folder(path, transformation_list, color_histogram, destination)
+        apply_transformation_folder(path,
+                                    transformation_list,
+                                    color_histogram,
+                                    destination)
 
     try:
         if path_type == 'file':
