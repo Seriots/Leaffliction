@@ -88,11 +88,16 @@ modifications on it',
         predictions = model.predict(img)
         score = predictions[0]
 
-        print(f"{name} == {labels[tf.argmax(score).numpy()]}\
--> {100 * tf.reduce_max(score):.2f}%")
+        GREEN = '\033[92m'
+        RED = '\033[91m'
+        END = '\033[0m'
+        C = GREEN if labels[tf.argmax(score).numpy()]\
+            in name else RED
+        print(f"{C}{name} == {labels[tf.argmax(score)]}\
+-> {100 * tf.reduce_max(score):.2f}%{END}")
 
         if user_input['plot']:
-            color = 'green' if labels[tf.argmax(score).numpy()]\
+            color = 'green' if labels[tf.argmax(score)]\
                 in name else 'red'
             plt.text(0, -17, os.path.basename(name), color=color, fontsize=25)
             plt.imshow(real_img)
