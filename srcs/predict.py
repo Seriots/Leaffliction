@@ -86,8 +86,13 @@ modifications on it',
         predictions = model.predict(img)
         score = tf.nn.softmax(predictions[0])
 
-        print(f"{name} == {labels[tf.argmax(score).numpy()]}\
--> {100 * tf.reduce_max(score):.2f}%")
+        GREEN = '\033[92m'
+        RED = '\033[91m'
+        END = '\033[0m'
+        C = GREEN if labels[tf.argmax(score).numpy()]\
+            in name else RED
+        print(f"{C}{name} == {labels[tf.argmax(score).numpy()]}\
+-> {100 * tf.reduce_max(score):.2f}%{END}")
 
         if user_input['plot']:
             color = 'green' if labels[tf.argmax(score).numpy()]\
