@@ -50,7 +50,7 @@ def list_to_dict(all_path_size: list) -> dict:
     return result
 
 
-def get_max_size(path: str, depth: int) -> list[tuple]:
+def get_max_size(path: str, depth: int) -> list:
     """Get the max folder size at depth from path"""
 
     if depth == 0:
@@ -152,7 +152,7 @@ def main():
             OptionObject('depth', 'The folder depth to count the data',
                          name='d',
                          expected_type=int,
-                         default=2,
+                         default=1,
                          ),
             OptionObject('transformation', 'The transformation to apply',
                          name='t',

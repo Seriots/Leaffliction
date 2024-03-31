@@ -45,12 +45,18 @@ def image_crop(image: np.ndarray, factor: float = 0.2) -> np.ndarray:
     elif factor < 0:
         factor = 0
 
-    return imaugs.aug_np_wrapper(image, imaugs.crop,
-                                 x1=factor,
-                                 x2=1-factor,
-                                 y1=factor,
-                                 y2=1-factor
-                                 )
+    crop_img = imaugs.aug_np_wrapper(image, imaugs.crop,
+                                     x1=factor,
+                                     x2=1-factor,
+                                     y1=factor,
+                                     y2=1-factor
+                                     )
+    crop_img = imaugs.aug_np_wrapper(crop_img,
+                                     imaugs.resize,
+                                     width=image.shape[1],
+                                     height=image.shape[0]
+                                     )
+    return crop_img
 
 
 @check_image
@@ -78,27 +84,28 @@ def image_distortion(image: np.ndarray) -> np.ndarray:
     out = skimage.transform.warp(image,
                                  tform,
                                  output_shape=(out_rows, out_cols))
+    out = skimage.transform.resize(out, (rows, cols))
     return out
 
 
 @check_image
-def image_blur(image: np.ndarray, factor: float = 3) -> np.ndarray:
+def image_blur(image: np.ndarray, factor: float = 3.0) -> np.ndarray:
     """Blur an image"""
-    factor = random.random() * factor
+    factor = random.random() * factor + 1
     return imaugs.aug_np_wrapper(image, imaugs.blur, radius=factor)
 
 
 @check_image
 def image_brightness(image: np.ndarray, factor: float = 2.5) -> np.ndarray:
     """Change brightness of an image"""
-    factor = random.random() * factor
+    factor = random.random() * factor + 1
     return imaugs.aug_np_wrapper(image, imaugs.brightness, factor=factor)
 
 
 @check_image
 def image_contrast(image: np.ndarray, factor: float = 3.0) -> np.ndarray:
     """Change contrast of an image"""
-    factor = random.random() * factor
+    factor = random.random() * factor + 1
     return imaugs.aug_np_wrapper(image, imaugs.contrast, factor=factor)
 
 

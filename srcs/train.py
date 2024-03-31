@@ -38,7 +38,7 @@ def list_to_dict(all_image: list) -> dict:
     return result
 
 
-def load_all_image(path: str, depth: int) -> list[tuple]:
+def load_all_image(path: str, depth: int) -> list:
     """Get the max folder size at depth from path"""
 
     if depth == 0:
@@ -90,7 +90,7 @@ modifications on it',
             OptionObject('depth', 'The folder depth to count the data',
                          name='d',
                          expected_type=int,
-                         default=2,
+                         default=1,
                          ),
             OptionObject('model', 'The model to use',
                          name='m',
@@ -160,7 +160,7 @@ modifications on it',
     test_ratio = user_input['test-ratio']
 
     size = len(next(iter(all_image_dict.values())))
-    train_size = int(valid_ratio * size)
+    trn_size = int(valid_ratio * size)
     test_size = int(test_ratio * size)
 
     x_train, x_valid, x_test = [], [], []
@@ -169,15 +169,19 @@ modifications on it',
     x_rnd = [i for i in range(0, size)]
     np.random.shuffle(x_rnd)
 
-    for i, value in enumerate(all_image_dict.values()):
-        data = np.array(value)[x_rnd[:train_size]]
-        x_train.extend(data)
-        y_train.extend([i] * (train_size))
-        test_data = np.array(value)[x_rnd[train_size:train_size + test_size]]
-        x_test.extend(test_data)
-        y_test.extend([i] * test_size)
-        x_valid.extend(np.array(value)[x_rnd[train_size + test_size:]])
-        y_valid.extend([i] * (size - train_size - test_size))
+    try:
+        for i, value in enumerate(all_image_dict.values()):
+            data = np.array(value)[x_rnd[:trn_size]]
+            x_train.extend(data)
+            y_train.extend([i] * (trn_size))
+            test_data = np.array(value)[x_rnd[trn_size:trn_size + test_size]]
+            x_test.extend(test_data)
+            y_test.extend([i] * test_size)
+            x_valid.extend(np.array(value)[x_rnd[trn_size + test_size:]])
+            y_valid.extend([i] * (size - trn_size - test_size))
+    except Exception as e:
+        print(f"Error while splitting data: {e}")
+        return
 
     labels = list(all_image_dict.keys())
 

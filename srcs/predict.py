@@ -90,7 +90,6 @@ modifications on it',
         print(e)
         return
 
-
     GREEN = '\033[92m'
     RED = '\033[91m'
     BOLD = '\033[1m'
@@ -101,11 +100,12 @@ modifications on it',
     if not user_input['show']:
         path, images_array, a = zip(*all_image)
         predictions = model.predict(np.array(images_array))
-        right_guesses = sum((labels[tf.argmax(score)] in name) for (name, score) in zip(path, predictions))
+        right_guesses = sum((labels[tf.argmax(score)] in name)
+                            for (name, score) in zip(path, predictions))
     else:
         for name, img, real_img in all_image:
 
-            score = model(np.expand_dims(img, axis = 0))[0]
+            score = model(np.expand_dims(img, axis=0))[0]
             is_right_guess = labels[tf.argmax(score)] in name
 
             C = GREEN if is_right_guess else RED
@@ -115,8 +115,8 @@ modifications on it',
             right_guesses += is_right_guess
 
             if user_input['plot']:
-                color = 'green' if is_right_guess else 'red'
-                plt.text(0, -17, os.path.basename(name), color=color, fontsize=25)
+                c = 'green' if is_right_guess else 'red'
+                plt.text(0, -17, os.path.basename(name), color=c, fontsize=25)
                 plt.imshow(real_img)
                 try:
                     plt.show()

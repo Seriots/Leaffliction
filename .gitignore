@@ -2,7 +2,9 @@ images/
 images/*
 srcs/test.py
 srcs/plantcv_test.py
+leaves.zip
 
+.vscode
 test_images/
 test_images/*
 *images*

@@ -57,7 +57,7 @@ def imgt_mask_background(img):
     """
 
     shadow_mask = pcv.rgb2gray_lab(img, channel='l')
-    shadow_mask = pcv.threshold.binary(shadow_mask, 15, 'light')
+    shadow_mask = pcv.threshold.binary(shadow_mask, 1, 'light')
     shadow_mask = pcv.fill(bin_img=shadow_mask, size=500)
     shadow_mask = pcv.erode(shadow_mask, 5, 1)
 

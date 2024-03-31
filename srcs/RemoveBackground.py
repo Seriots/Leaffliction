@@ -10,7 +10,7 @@ from utils.data_transformation import imgt_mask_background
 from utils.data_transformation import imgt_clear_background
 
 
-def remove_background(path: str, destination: str) -> list[tuple]:
+def remove_background(path: str, destination: str) -> list:
     """Get the max folder size at depth from path"""
 
     with os.scandir(path) as it:
