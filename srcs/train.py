@@ -157,7 +157,7 @@ modifications on it',
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(len(all_image_dict.keys()), activation='softmax'))
     model.summary()
-    
+
     if 'start-weights' in user_input:
         try:
             weights = user_input['start-weights']
