@@ -21,10 +21,6 @@ def load_all_image(path: str) -> list:
                                              target_size=(256, 256))
 
                 img_array = preprocessing.img_to_array(img)
-                # print(img_array.shape)
-
-                # img_array = tf.expand_dims(img_array, 0)
-                # print(img_array.shape)
                 all_img.append((entry.name, img_array, img))
             elif entry.is_dir():
                 all_img += load_all_image(entry.path)

@@ -40,7 +40,6 @@ def list_to_dict(all_image: list) -> dict:
 
 def load_all_image(path: str, depth: int) -> list:
     """Get the max folder size at depth from path"""
-
     if depth == 0:
         all_img = []
         with os.scandir(path) as it:
@@ -137,20 +136,11 @@ modifications on it',
     try:
         all_image = load_all_image(path, depth)
         all_image_dict = list_to_dict(all_image)
-        print("to dict done")
     except Exception as e:
         print(e)
         return
 
     model = models.Sequential()
-    if 'start-weights' in user_input:
-        try:
-            weights = user_input['start-weights']
-            if (weights):
-                model.load_weights(weights)
-        except Exception as e:
-            print(f"Error while loading weights: {e}")
-            return
 
     model.add(tf.keras.Input(shape=(256, 256, 3)))
     model.add(layers.Conv2D(32, (3, 3), activation='relu'))
@@ -168,6 +158,14 @@ modifications on it',
     model.add(layers.Dense(len(all_image_dict.keys()), activation='softmax'))
     model.summary()
     
+    if 'start-weights' in user_input:
+        try:
+            weights = user_input['start-weights']
+            if (weights):
+                model.load_weights(weights)
+        except Exception as e:
+            print(f"Error while loading weights: {e}")
+            return
 
     valid_ratio = user_input['validation-ratio']
     test_ratio = user_input['test-ratio']
@@ -221,8 +219,8 @@ modifications on it',
               validation_data=valid_data,
               epochs=user_input['epochs'],
               callbacks=[early_stop, checkpoint])
-    model.save(model_path)
     try:
+        model.save(model_path)
         pickle.dump(labels, open('labels.pkl', 'wb'))
     except Exception as e:
         print(e)
