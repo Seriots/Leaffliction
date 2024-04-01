@@ -13,7 +13,6 @@ from utils.ArgsHandler import display_helper
 
 def load_all_image(path: str) -> list:
     """Get the max folder size at depth from path"""
-
     all_img = []
     with os.scandir(path) as it:
         for entry in it:

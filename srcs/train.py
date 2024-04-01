@@ -92,15 +92,15 @@ modifications on it',
                          expected_type=int,
                          default=1,
                          ),
-            OptionObject('model', 'The model to use',
+            OptionObject('model', 'The model to save',
                          name='m',
                          expected_type=str,
                          default='model.keras',
                          ),
-            OptionObject('validation-ratio', 'The ratio of validation data',
+            OptionObject('validation-ratio', 'The ratio of the train data',
                          name='v',
                          expected_type=float,
-                         default=0.9,
+                         default=0.8,
                          check_function=check_ratio
                          ),
             OptionObject('test-ratio', 'The ratio of validation data',
@@ -113,7 +113,11 @@ modifications on it',
                          name='e',
                          expected_type=int,
                          default=10
-                         )
+                         ),
+            OptionObject('start-weights', 'Initial weights',
+                         name='w',
+                         expected_type=str,
+                         default=None)
         ],
         """"""
     )
@@ -139,6 +143,14 @@ modifications on it',
         return
 
     model = models.Sequential()
+    if 'start-weights' in user_input:
+        try:
+            weights = user_input['start-weights']
+            if (weights):
+                model.load_weights(weights)
+        except Exception as e:
+            print(f"Error while loading weights: {e}")
+            return
 
     model.add(tf.keras.Input(shape=(256, 256, 3)))
     model.add(layers.Conv2D(32, (3, 3), activation='relu'))
@@ -155,9 +167,11 @@ modifications on it',
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(len(all_image_dict.keys()), activation='softmax'))
     model.summary()
+    
 
     valid_ratio = user_input['validation-ratio']
     test_ratio = user_input['test-ratio']
+    model_path = user_input['model']
 
     size = len(next(iter(all_image_dict.values())))
     trn_size = int(valid_ratio * size)
@@ -207,7 +221,7 @@ modifications on it',
               validation_data=valid_data,
               epochs=user_input['epochs'],
               callbacks=[early_stop, checkpoint])
-    model.save('./model.keras')
+    model.save(model_path)
     try:
         pickle.dump(labels, open('labels.pkl', 'wb'))
     except Exception as e:

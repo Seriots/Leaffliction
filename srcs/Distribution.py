@@ -78,6 +78,7 @@ all files are going to count for first folder category
     plt.pie(data, labels=labels, autopct='%.1f%%')
     plt.title("Pie chart")
 
+    sns.set_theme(font_scale=0.5, palette="tab10")
     fig.add_subplot(1, 2, 2)
     sns.barplot(x=labels, y=data, hue=labels, dodge=False)
     plt.title("Bar chart")
